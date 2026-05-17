@@ -1,0 +1,313 @@
+# Sanyo PLV-Z2000 RS232C Command Reference
+# Source: RS232C Basic Functional Specifications PLV-Z2000 Ver.1.00
+#
+# All commands are ASCII strings terminated with CR (0x0D).
+# Command format:  "C{XX}\r"  (functional execution)
+# Status format:   "CR{X}\r"  (status read)
+#
+# Responses:
+#   Functional: ACK CR (0x06 0x0D) on success, "?\r" on error
+#   Status:     data string + CR on success, "?\r" on error
+#
+# Timing constraints:
+#   - Wait 500ms between pipelined commands (100ms for VOLUME +/-)
+#   - No commands for ~7s after AC power-on (internal init)
+#   - No commands for 7s after POWER ON command (lamp processing)
+#   - Input switch takes ~5s; no further commands during this time
+
+protocol:
+  baud_rate: 19200          # default; changeable in service mode (alt: 9600)
+  data_bits: 8
+  parity: NONE
+  stop_bits: 1
+  flow_control: NONE
+  command_terminator: "\r"  # 0x0D
+  ack_response: "\x06\r"    # 0x06 0x0D
+  error_response: "?\r"
+  pipeline_delay_ms: 500    # minimum wait after response before next command
+
+# ── Functional Execution Commands ────────────────────────────────────────────
+
+functional_commands:
+
+  power:
+    on:
+      cmd: "C00"
+      description: "Power ON. No effect if already ON. Cancels countdown."
+    off_quick:
+      cmd: "C01"
+      description: "Quick Power OFF (immediate, no OSD confirmation)"
+    off_standby:
+      cmd: "C02"
+      description: "Power OFF via ON/STANDBY button (shows 'Power OFF' OSD)"
+
+  video_mute:
+    on:
+      cmd: "C0D"
+      description: "Black out image (same as NO SHOW button)"
+    off:
+      cmd: "C0E"
+      description: "Restore image from mute"
+
+  input:
+    video:
+      cmd: "C23"
+      ha_key: "Video"
+      cr1_response: "0"
+    s_video:
+      cmd: "C24"
+      ha_key: "S-Video"
+      cr1_response: "1"
+    component1:
+      cmd: "C25"
+      ha_key: "Component 1"
+      cr1_response: "2"
+    component2:
+      cmd: "C26"
+      ha_key: "Component 2"
+      cr1_response: "3"
+    analog_rgb:
+      cmd: "C50"
+      ha_key: "Computer (Analog RGB)"
+      cr1_response: "6"
+    scart:
+      cmd: "C51"
+      ha_key: "Computer (Scart)"
+      cr1_response: "7"
+      note: "International models only"
+    hdmi1:
+      cmd: "C53"
+      ha_key: "HDMI 1"
+      cr1_response: "4"
+    hdmi2:
+      cmd: "C54"
+      ha_key: "HDMI 2"
+      cr1_response: "5"
+
+  image_mode:
+    living:
+      cmd: "C11"
+      ha_key: "Living"
+    creative_cinema:
+      cmd: "C12"
+      ha_key: "Creative Cinema"
+    pure_cinema:
+      cmd: "C13"
+      ha_key: "Pure Cinema"
+    image1:
+      cmd: "C14"
+      ha_key: "Image 1"
+    image2:
+      cmd: "C15"
+      ha_key: "Image 2"
+    image3:
+      cmd: "C16"
+      ha_key: "Image 3"
+    image4:
+      cmd: "C17"
+      ha_key: "Image 4"
+    vivid:
+      cmd: "C18"
+      ha_key: "Vivid"
+    brilliant_cinema:
+      cmd: "C19"
+      ha_key: "Brilliant Cinema"
+    dynamic:
+      cmd: "C1A"
+      ha_key: "Dynamic"
+    natural:
+      cmd: "C1B"
+      ha_key: "Natural"
+    image5:
+      cmd: "C36"
+      ha_key: "Image 5"
+    image6:
+      cmd: "C37"
+      ha_key: "Image 6"
+    image7:
+      cmd: "C38"
+      ha_key: "Image 7"
+
+  screen_mode:
+    normal:
+      cmd: "C0F"
+      ha_key: "Normal"
+      description: "Normal screen size"
+    full:
+      cmd: "C10"
+      ha_key: "Full"
+      description: "Full screen size"
+    zoom:
+      cmd: "C2C"
+      ha_key: "Zoom"
+      description: "Zoom screen size"
+    natural_wide1:
+      cmd: "C2D"
+      ha_key: "Natural Wide 1"
+    natural_wide2:
+      cmd: "C2E"
+      ha_key: "Natural Wide 2"
+    caption_in:
+      cmd: "C63"
+      ha_key: "Caption IN"
+    full_through:
+      cmd: "C65"
+      ha_key: "Full Through"
+    normal_through:
+      cmd: "C66"
+      ha_key: "Normal Through"
+
+  lamp_mode:
+    auto1:
+      cmd: "C72"
+      ha_key: "Auto 1"
+    auto2:
+      cmd: "C73"
+      ha_key: "Auto 2"
+    normal:
+      cmd: "C74"
+      ha_key: "Normal"
+    eco:
+      cmd: "C75"
+      ha_key: "Eco"
+
+  power_management:
+    on:
+      cmd: "C2A"
+      description: "Enable Power Management (stored in EEPROM)"
+    off:
+      cmd: "C2B"
+      description: "Disable Power Management (stored in EEPROM)"
+
+  projection:
+    ceiling_on:
+      cmd: "C76"
+    ceiling_off:
+      cmd: "C77"
+    rear_on:
+      cmd: "C78"
+    rear_off:
+      cmd: "C79"
+
+  osd:
+    menu_on:    { cmd: "C1C" }
+    menu_off:   { cmd: "C1D" }
+    display_clear: { cmd: "C1E", description: "Clear all OSD unconditionally" }
+    freeze_on:  { cmd: "C43" }
+    freeze_off: { cmd: "C44" }
+
+  navigation:
+    point_right: { cmd: "C3A" }
+    point_left:  { cmd: "C3B" }
+    point_up:    { cmd: "C3C" }
+    point_down:  { cmd: "C3D" }
+    enter:       { cmd: "C3F", description: "Same as SELECT button" }
+    reset:       { cmd: "C40", description: "Same as RESET button on remote" }
+    back:        { cmd: "C41", description: "Same as BACK button on remote" }
+
+  misc:
+    factory_default:
+      cmd: "C4C"
+      description: "Reset all settings to factory defaults"
+    auto_pc_adjust:
+      cmd: "C89"
+      description: "Execute Auto PC Adj. (suspend if already running)"
+
+# ── Status Read Commands ──────────────────────────────────────────────────────
+
+status_read_commands:
+
+  status:
+    cmd: "CR0"
+    description: "Get projector operating status"
+    response_length: 2
+    values:
+      "00":
+        label: "Power ON"
+        is_on: true
+      "80":
+        label: "Normal Standby"
+        is_on: false
+      "40":
+        label: "Processing Countdown"
+        is_on: true
+        note: "Projector starting up (warmup phase). Treated as 'on' for the switch entity because the user just initiated power-on; commands are not executed until status transitions to 00."
+      "20":
+        label: "Processing Cooling Down"
+        is_on: false
+        note: "Fans running for ~60s after power off; no functional commands accepted"
+      "10":
+        label: "Power Failure"
+        is_on: false
+      "28":
+        label: "Cooling Down (Abnormal Temperature)"
+        is_on: false
+      "88":
+        label: "Standby (After Abnormal Temperature)"
+        is_on: false
+      "24":
+        label: "Processing Power Save / Cooling Down"
+        is_on: false
+      "04":
+        label: "Power Save"
+        is_on: false
+        note: "Triggered by Power Management after 5 min without signal"
+      "21":
+        label: "Cooling Down (Lamp Failure)"
+        is_on: false
+      "81":
+        label: "Standby (After Lamp Failure)"
+        is_on: false
+
+  input:
+    cmd: "CR1"
+    description: "Get currently selected input source"
+    response_length: 1
+    values:
+      "0": "Video"
+      "1": "S-Video"
+      "2": "Component 1"
+      "3": "Component 2"
+      "4": "HDMI 1"
+      "5": "HDMI 2"
+      "6": "Computer (Analog RGB)"
+      "7": "Computer (Scart)"
+
+  lamp_time:
+    cmd: "CR3"
+    description: "Get total lamp running time in hours"
+    response_length: 5
+    format: "5-digit zero-padded integer (hours)"
+    example: "'00410' = 410 hours"
+
+  screen_setting:
+    cmd: "CR4"
+    description: "Get Ceiling / Rear screen orientation setting"
+    response_length: 2
+    values:
+      "11": "Normal"
+      "10": "Ceiling & Rear ON (top/bottom + left/right reversed)"
+      "01": "Rear ON (left/right reversed)"
+      "00": "Ceiling ON (top/bottom reversed)"
+
+  temperature:
+    cmd: "CR6"
+    description: "Get temperature readings from all 3 internal sensors"
+    format: "'{s1} {s2} {s3}' — each value is 'XX.X' (°C), or a placeholder when no real data is available"
+    example: "' 31.5  35.2  32.8'"
+    placeholders:
+      "I--": "Standby / first 10s after power on (per spec §8.7)"
+      "----": "Observed in Power Save mode (code 04) — undocumented but common"
+    sensors:
+      - id: 1
+        offset: 0
+        length: 5
+        unit: "°C"
+      - id: 2
+        offset: 6
+        length: 5
+        unit: "°C"
+      - id: 3
+        offset: 12
+        length: 5
+        unit: "°C"

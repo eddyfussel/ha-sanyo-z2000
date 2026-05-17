@@ -1,0 +1,80 @@
+version: '3'
+
+tasks:
+
+  # ---------------------------------------------------------------------------
+  # One-time + daily setup
+  # ---------------------------------------------------------------------------
+
+  setup:
+    desc: "Install dependencies and symlink component into config/ (required once)"
+    cmds:
+      # --no-install-project keeps this repo off sys.path as a package,
+      # which prevents the editable-install path-hook from polluting
+      # custom_components.__path__ and breaking HA's integration loader.
+      - uv sync --dev --no-install-project --python 3.14
+      - |
+        TARGET_DIR="$(pwd)/config/custom_components"
+        if [ -L "$TARGET_DIR" ]; then
+          rm "$TARGET_DIR"
+        fi
+        mkdir -p "$TARGET_DIR"
+      - |
+        TARGET="$(pwd)/config/custom_components/sanyo_z2000"
+        SOURCE="$(pwd)/custom_components/sanyo_z2000"
+        rm -rf "$TARGET"
+        ln -s "$SOURCE" "$TARGET"
+        echo "Symlink: $TARGET -> $SOURCE"
+    status:
+      - test -f .venv/bin/hass
+      - test -L config/custom_components/sanyo_z2000
+
+  run:
+    desc: "Start Home Assistant at http://localhost:8123"
+    deps: [setup]
+    env:
+      # macOS Xcode CLT ships C++ standard headers inside the SDK, not in the
+      # global include path. Without this, any package that builds a C extension
+      # at runtime fails with "cstdint not found".
+      CPATH: /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1
+    cmds:
+      - .venv/bin/hass -c config
+
+  # ---------------------------------------------------------------------------
+  # Tests and linting
+  # ---------------------------------------------------------------------------
+
+  test:
+    desc: "Run unit + integration + snapshot tests"
+    deps: [setup]
+    cmds:
+      - .venv/bin/pytest tests/ -v
+
+  cov:
+    desc: "Run tests with coverage report (HA dev guideline style)"
+    deps: [setup]
+    cmds:
+      - .venv/bin/pytest tests/ --cov=custom_components.sanyo_z2000 --cov-report=term-missing -vv
+
+  snapshot-update:
+    desc: "Regenerate Syrupy snapshots — review the diff before committing"
+    deps: [setup]
+    cmds:
+      - .venv/bin/pytest tests/ --snapshot-update
+
+  lint:
+    desc: "Lint with ruff"
+    deps: [setup]
+    cmds:
+      - .venv/bin/ruff check custom_components/ tests/
+
+  # ---------------------------------------------------------------------------
+  # Housekeeping
+  # ---------------------------------------------------------------------------
+
+  clean:
+    desc: "Reset HA state (storage, DB, log) — keeps deps cache and component symlink"
+    cmds:
+      - rm -rf config/.storage config/.HA_VERSION config/tts
+        config/home-assistant_v2.db config/home-assistant_v2.db-shm config/home-assistant_v2.db-wal
+        config/home-assistant.log config/home-assistant.log.1 config/home-assistant.log.fault

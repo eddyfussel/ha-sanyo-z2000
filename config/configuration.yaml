@@ -1,0 +1,14 @@
+homeassistant:
+  name: "Sanyo Z2000 Dev"
+
+http:
+frontend:
+
+# Required so that the ESPHome integration registers its serialx URI handler
+# (esphome.async_setup gates registration on "usb" being loaded).
+usb:
+
+logger:
+  default: warning
+  logs:
+    custom_components.sanyo_z2000: debug

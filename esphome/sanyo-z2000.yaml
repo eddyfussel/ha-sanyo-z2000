@@ -1,0 +1,45 @@
+esphome:
+  name: sanyo
+  friendly_name: Sanyo Z2000
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+logger:
+  baud_rate: 0  # disable logging over UART
+
+uart:
+  id: uart_bus
+  tx_pin: 17
+  rx_pin: 16
+  baud_rate: 19200
+  data_bits: 8
+  parity: NONE
+  stop_bits: 1
+
+# Expose UART as network serial port via ESPHome Native API
+serial_proxy:
+  name: "Sanyo Z2000 RS232"
+  uart_id: uart_bus
+  port_type: RS232
+
+# Home Assistant Native API (required by serial_proxy)
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  ap:
+    ssid: !secret ap_ssid
+    password: !secret ap_password
+
+captive_portal:

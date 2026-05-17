@@ -1,0 +1,273 @@
+esphome:
+  name: sanyo
+  friendly_name: Sanyo
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+# Enable logging
+logger:
+  level: VERBOSE # makes uart stream available in esphome logstream
+  baud_rate: 0   # disable logging over uart
+
+external_components:
+  - source: github://eigger/espcomponents
+    components: [ uartex ]
+    refresh: always
+
+uartex:
+  rx_timeout: 10ms
+  tx_delay: 50ms
+  tx_timeout: 500ms
+  tx_retry_cnt: 3
+
+  rx_footer: [0x0D]
+  tx_footer: [0x0D]
+
+  version:
+    disabled: False
+  error:
+    disabled: False
+  log:
+    disabled: True
+
+# Example configuration entry
+uart:
+  id: uart_bus
+  tx_pin: 17
+  rx_pin: 16
+  baud_rate: 19200
+  data_bits: 8
+  parity: NONE
+  stop_bits: 1
+
+switch:
+  - platform: uartex
+    name: "Switch1"
+    state: 
+      data: [0x00, 0x00]
+      mask: [0x00, 0x00]
+      match: exact
+    state_on:
+      data: "00"
+    state_off:
+      data: "80"
+    command_on:
+      data: "C00"
+      ack: [0x06]
+    command_off:
+      data: "C01"
+    update_interval: 5s
+    command_update:
+      data: "CR0"
+
+sensor:
+  - platform: uartex
+    name: Lamp
+    state: 
+      data: [0x00, 0x00, 0x00, 0x00, 0x00]
+      mask: [0x00, 0x00, 0x00, 0x00, 0x00]
+      match: exact
+    state_number:
+      offset: 0
+      length: 5
+      decode: ascii
+    update_interval: 10s
+    command_update:
+      data: "CR3"
+    device_class: duration
+    unit_of_measurement: "h"
+  - platform: uartex
+    name: Temp1
+    state: 
+      data: [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+      mask: [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+      match: exact
+    state_number:
+      offset: 1
+      length: 4
+      decode: ascii
+    update_interval: 10s
+    command_update:
+      data: "CR6"
+    device_class: temperature
+    unit_of_measurement: "°C"
+    filters:
+      - round: 1
+    accuracy_decimals: 1
+  - platform: uartex
+    name: Temp2
+    state: 
+      data: [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+      mask: [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+      match: exact
+    state_number:
+      offset: 7
+      length: 4
+      decode: ascii
+    update_interval: 10s
+    command_update:
+      data: "CR6"
+    device_class: temperature
+    unit_of_measurement: "°C"
+    filters:
+      - round: 1
+    accuracy_decimals: 1
+  - platform: uartex
+    name: Temp3
+    state: 
+      data: [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+      mask: [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+      match: exact
+    state_number:
+      offset: 13
+      length: 4
+      decode: ascii
+    update_interval: 10s
+    command_update:
+      data: "CR6"
+    device_class: temperature
+    unit_of_measurement: "°C"
+    filters:
+      - round: 1
+    accuracy_decimals: 1
+text_sensor:
+  - platform: uartex
+    state: 
+      data: [0x00, 0x00]
+      mask: [0x00, 0x00]
+      match: exact
+    name: "Status"
+    command_update:
+      data: "CR0"
+    lambda: |-
+      if (data[0] == 0x30 && data[1] == 0x30) return "Power ON";
+      if (data[0] == 0x38 && data[1] == 0x30) return "Standby";
+      if (data[0] == 0x34 && data[1] == 0x30) return "Progressing Countdown";
+      if (data[0] == 0x32 && data[1] == 0x30) return "Progressing Cooling down";
+      if (data[0] == 0x31 && data[1] == 0x30) return "Power failure";
+      if (data[0] == 0x32 && data[1] == 0x38) return "Cooldown due abnormal temperature";
+      if (data[0] == 0x38 && data[1] == 0x38) return "Standby after abnormal temperature";
+      if (data[0] == 0x32 && data[1] == 0x34) return "Processing Power Save / Cooling down";
+      if (data[0] == 0x30 && data[1] == 0x34) return "Progressing Cooling down after OFF due lamp failure";
+      if (data[0] == 0x38 && data[1] == 0x31) return "Standby after Cooling down after due lamp failure";
+      return "Unknown";
+
+select:
+  - platform: uartex
+    name: Lamp
+    state:
+      data: []
+    options:
+      - Auto1
+      - Auto2
+      - Normal
+      - Eco
+    command_select: !lambda |-
+      if (str == "Auto1") return {"C72"};
+      if (str == "Auto2") return {"C73"};
+      if (str == "Normal") return {"C74"};
+      if (str == "Eco") return {"C75"};
+  - platform: uartex
+    name: Screen
+    state:
+      data: []
+    options:
+      - CaptionIn
+      - FullThroughtSize
+      - NormalThroughtSize
+      - FullSize
+      - NormalSize
+      - NaturalWide1
+      - NaturalWide2
+      - Zoom
+    command_select: !lambda |-
+      if (str == "CaptionIn") return {"C63"};
+      if (str == "FullThroughtSize") return {"C65"};
+      if (str == "NormalThroughtSize") return {"C66"};
+      if (str == "FullSize") return {"C10"};
+      if (str == "NormalSize") return {"C0F"};
+      if (str == "NaturalWide1") return {"C2D"};
+      if (str == "NaturalWide2") return {"C2E"};
+      if (str == "Zoom") return {"C2C"};
+  - platform: uartex
+    name: Image
+    state:
+      data: []
+    options:
+      - Living
+      - CreativeCinema
+      - PureCinema
+      - Image1
+      - Image2
+      - Image3
+      - Image4
+      - Image5
+      - Image6
+      - Image7
+      - Vivid
+      - BrilliantCinema
+      - Dynamic
+      - Natural
+    command_select: !lambda |-
+      if (str == "Living") return {"C11"};
+      if (str == "CreativeCinema") return {"C12"};
+      if (str == "PureCinema") return {"C13"};
+      if (str == "Image5") return {"C36"};
+      if (str == "Image6") return {"C37"};
+      if (str == "Image7") return {"C38"};
+      if (str == "Image1") return {"C14"};
+      if (str == "Image2") return {"C15"};
+      if (str == "Image3") return {"C16"};
+      if (str == "Image4") return {"C17"};
+      if (str == "Vivid") return {"C18"};
+      if (str == "BrilliantCinema") return {"C19"};
+      if (str == "Dynamic") return {"C1A"};
+      if (str == "Natural") return {"C1B"};
+  - platform: uartex
+    name: Input
+    state:
+      data: [0x00]
+      mask: [0x00]
+      match: exact
+    options:
+      - HDMI1
+      - HDMI2
+    initial_option: HDMI1
+    command_select: !lambda |-
+      if (str == "HDMI1") return {"C53"};
+      if (str == "HDMI2") return {"C54"};
+      return {"C53"};
+    state_select: !lambda |-
+      if (data[0] == 0x34) return "HDMI1";
+      if (data[0] == 0x35) return "HDMI2";
+      return "HDMI1";
+    update_interval: 10s
+    command_update:
+      data: "CR1"
+
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: !secret ap_ssid
+    password: !secret ap_password
+
+captive_portal:
+
+web_server:
+  port: 80

@@ -1,0 +1,27 @@
+# serializer version: 1
+# name: test_diagnostics_redacts_device_and_includes_state
+  dict({
+    'coordinator': dict({
+      'data': dict({
+        'input_label': 'HDMI 1',
+        'is_on': True,
+        'lamp_hours': 410,
+        'status_code': '00',
+        'status_label': 'Power ON',
+        'temp1': 31.5,
+        'temp2': 35.2,
+        'temp3': 32.8,
+      }),
+      'last_update_success': True,
+      'update_interval_seconds': 10.0,
+    }),
+    'entry': dict({
+      'data': dict({
+        'device': '**REDACTED**',
+      }),
+      'title': 'Sanyo PLV-Z2000',
+      'unique_id_redacted': True,
+      'version': 1,
+    }),
+  })
+# ---

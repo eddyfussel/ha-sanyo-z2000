@@ -1,0 +1,27 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Sanyo PLV-Z2000 einrichten",
+        "data": {
+          "device": "Serielle Schnittstelle"
+        },
+        "data_description": {
+          "device": "Pfad der seriellen Schnittstelle. Wähle eine ESPHome SerialProxy oder einen physisch angeschlossenen USB-Seriell-Adapter."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung zum Projektor fehlgeschlagen. Verkabelung und ESPHome-Konfiguration prüfen."
+    },
+    "abort": {
+      "already_configured": "Dieses Gerät ist bereits konfiguriert."
+    }
+  },
+  "system_health": {
+    "info": {
+      "configured_projectors": "Konfigurierte Projektoren",
+      "all_polling_successful": "Datenabfrage erfolgreich"
+    }
+  }
+}

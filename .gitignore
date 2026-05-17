@@ -1,0 +1,29 @@
+# ─── Secrets ────────────────────────────────────────────────────────────────
+esphome/secrets.yaml
+
+# ─── ESPHome build artifacts ────────────────────────────────────────────────
+esphome/.esphome/
+
+# ─── Python ─────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# ─── Test / lint caches ─────────────────────────────────────────────────────
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.ruff_cache/
+
+# ─── IDE / agent state ──────────────────────────────────────────────────────
+.claude/
+.vscode/
+.idea/
+
+# ─── Local HA dev instance state ────────────────────────────────────────────
+# Everything under config/ is runtime state EXCEPT configuration.yaml,
+# which we commit so `task setup && task run` works out of the box.
+config/*
+!config/configuration.yaml

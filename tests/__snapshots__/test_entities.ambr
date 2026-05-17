@@ -1,0 +1,122 @@
+# serializer version: 1
+# name: test_all_entities_match_snapshot
+  list([
+    dict({
+      'attributes': dict({
+        'friendly_name': 'Sanyo PLV-Z2000 Image Mode',
+        'icon': 'mdi:image-filter-hdr',
+        'options': list([
+          'Living',
+          'Creative Cinema',
+          'Pure Cinema',
+          'Image 1',
+          'Image 2',
+          'Image 3',
+          'Image 4',
+          'Image 5',
+          'Image 6',
+          'Image 7',
+          'Vivid',
+          'Brilliant Cinema',
+          'Dynamic',
+          'Natural',
+        ]),
+      }),
+      'entity_id': 'select.sanyo_plv_z2000_image_mode',
+      'state': 'unknown',
+    }),
+    dict({
+      'attributes': dict({
+        'friendly_name': 'Sanyo PLV-Z2000 Input Source',
+        'icon': 'mdi:import',
+        'options': list([
+          'Video',
+          'S-Video',
+          'Component 1',
+          'Component 2',
+          'HDMI 1',
+          'HDMI 2',
+          'Computer (Analog RGB)',
+          'Computer (Scart)',
+        ]),
+      }),
+      'entity_id': 'select.sanyo_plv_z2000_input_source',
+      'state': 'HDMI 1',
+    }),
+    dict({
+      'attributes': dict({
+        'friendly_name': 'Sanyo PLV-Z2000 Screen Mode',
+        'icon': 'mdi:aspect-ratio',
+        'options': list([
+          'Normal',
+          'Full',
+          'Zoom',
+          'Natural Wide 1',
+          'Natural Wide 2',
+          'Caption IN',
+          'Full Through',
+          'Normal Through',
+        ]),
+      }),
+      'entity_id': 'select.sanyo_plv_z2000_screen_mode',
+      'state': 'unknown',
+    }),
+    dict({
+      'attributes': dict({
+        'device_class': 'duration',
+        'friendly_name': 'Sanyo PLV-Z2000 Lamp Hours',
+        'icon': 'mdi:lightbulb-on-outline',
+        'state_class': <SensorStateClass.TOTAL_INCREASING: 'total_increasing'>,
+        'unit_of_measurement': <UnitOfTime.HOURS: 'h'>,
+      }),
+      'entity_id': 'sensor.sanyo_plv_z2000_lamp_hours',
+      'state': '410',
+    }),
+    dict({
+      'attributes': dict({
+        'friendly_name': 'Sanyo PLV-Z2000 Projector Mode',
+        'icon': 'mdi:information-outline',
+      }),
+      'entity_id': 'sensor.sanyo_plv_z2000_projector_mode',
+      'state': 'Power ON',
+    }),
+    dict({
+      'attributes': dict({
+        'device_class': 'temperature',
+        'friendly_name': 'Sanyo PLV-Z2000 Temperature Sensor 1',
+        'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
+        'unit_of_measurement': <UnitOfTemperature.CELSIUS: '°C'>,
+      }),
+      'entity_id': 'sensor.sanyo_plv_z2000_temperature_sensor_1',
+      'state': '31.5',
+    }),
+    dict({
+      'attributes': dict({
+        'device_class': 'temperature',
+        'friendly_name': 'Sanyo PLV-Z2000 Temperature Sensor 2',
+        'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
+        'unit_of_measurement': <UnitOfTemperature.CELSIUS: '°C'>,
+      }),
+      'entity_id': 'sensor.sanyo_plv_z2000_temperature_sensor_2',
+      'state': '35.2',
+    }),
+    dict({
+      'attributes': dict({
+        'device_class': 'temperature',
+        'friendly_name': 'Sanyo PLV-Z2000 Temperature Sensor 3',
+        'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
+        'unit_of_measurement': <UnitOfTemperature.CELSIUS: '°C'>,
+      }),
+      'entity_id': 'sensor.sanyo_plv_z2000_temperature_sensor_3',
+      'state': '32.8',
+    }),
+    dict({
+      'attributes': dict({
+        'friendly_name': 'Sanyo PLV-Z2000 Power',
+        'icon': 'mdi:projector',
+      }),
+      'entity_id': 'switch.sanyo_plv_z2000_power',
+      'state': 'on',
+    }),
+  ])
+# ---
