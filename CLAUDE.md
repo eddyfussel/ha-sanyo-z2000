@@ -45,6 +45,8 @@ task snapshot-update    Regenerate Syrupy snapshots
 
 **Buffer-dirty flag.** A timed-out `readuntil` doesn't stop the projector from eventually sending its response — those bytes land in serialx's buffer and would be misread as the next command's reply (the classic symptom: `Projector Mode: Unknown (----  ----  ----)` because a stale CR6 reply leaked into a CR0 read). After any timeout we set `_buffer_might_be_dirty`; the next `_send_command` drains pending bytes before writing.
 
+**`serialx` flipped `write()` from sync to async between 1.7.x and 1.8.x.** HA pulls whichever version matches its core; that may not match what `uv.lock` resolves to. We call I/O methods through `_maybe_await(...)` which awaits only if the return value is a coroutine. Don't "simplify" this — getting it wrong silently drops the write (`RuntimeWarning: coroutine '...' was never awaited`), CR0 times out, and the integration ends up in `setup_retry` for weeks before anyone notices.
+
 ## Adding a command
 
 `const.py` (bytes + map dict) → `docs/commands.yaml` (docs) → wire up in `switch.py` / `sensor.py` / `select.py`.

@@ -11,7 +11,7 @@ dev = [
     "pytest-homeassistant-custom-component>=0.13.330",
     "pytest-asyncio",
     "ruff",
-    "serialx[esphome]>=1.7.0",
+    "serialx[esphome]>=1.8.0",
     # HA per-integration requirements that get pulled in lazily but the WS API's
     # service-description endpoint imports all base components eagerly, so they
     # must already be present in the venv before HA boots.

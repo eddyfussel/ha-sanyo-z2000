@@ -9,7 +9,7 @@
   "integration_type": "hub",
   "iot_class": "local_polling",
   "loggers": ["serialx"],
-  "requirements": ["serialx[esphome]>=1.7.0"],
+  "requirements": ["serialx[esphome]>=1.8.0"],
   "homeassistant": "2025.5.0",
-  "version": "1.0.0"
+  "version": "1.0.1"
 }

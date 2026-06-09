@@ -112,8 +112,11 @@ class SanyoCoordinator(DataUpdateCoordinator[ProjectorData]):
                 self._buffer_might_be_dirty = False
 
             try:
-                # write() is synchronous (mirrors asyncio.StreamWriter); only drain() awaits.
-                self._serial.write(command)
+                # serialx 1.7.x exposes write() as sync; 1.8.x made it async.
+                # HA 2026.6+ ships the async version — leaving a sync call here
+                # produces an un-awaited coroutine and the projector never
+                # receives anything, breaking integration setup. Handle both.
+                await _maybe_await(self._serial.write(command))
                 await self._serial.drain()
                 raw = await asyncio.wait_for(
                     self._serial.readuntil(b"\r"),
@@ -236,6 +239,21 @@ class SanyoCoordinator(DataUpdateCoordinator[ProjectorData]):
         """Send a fire-and-forget functional command; refresh state afterwards."""
         await self._send_command(command)
         await self.async_request_refresh()
+
+
+async def _maybe_await(result):
+    """Await `result` only if it's a coroutine.
+
+    Some serialx methods (notably `write`/`writelines`) flipped from sync
+    in 1.7.x to async in 1.8.x. HA pulls the version that matches its core,
+    which may differ from the locked dev-env version. This helper lets the
+    same call site work against both APIs without producing the dreaded
+    `RuntimeWarning: coroutine '...' was never awaited` (which silently
+    drops the write and times out the response).
+    """
+    if asyncio.iscoroutine(result):
+        return await result
+    return result
 
 
 def _parse_temp(value: str) -> float | None:
