@@ -55,6 +55,7 @@ def mock_coordinator() -> MagicMock:
     coord.async_connect = AsyncMock()
     coord.async_disconnect = AsyncMock()
     coord.async_config_entry_first_refresh = AsyncMock()
+    coord.async_refresh = AsyncMock()
     coord.async_request_refresh = AsyncMock()
     coord.async_send_command = AsyncMock()
     coord.data = replace(MOCK_PROJECTOR_DATA)  # fresh copy per test

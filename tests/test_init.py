@@ -35,25 +35,33 @@ async def test_setup_and_unload(
     mock_coordinator.async_disconnect.assert_awaited_once()
 
 
-async def test_setup_fails_when_serial_unreachable(hass: HomeAssistant) -> None:
-    """OSError from connect surfaces as SETUP_RETRY (ConfigEntryNotReady)."""
-    bad = MagicMock()
-    bad.async_connect = MagicMock(side_effect=OSError("port unavailable"))
+async def test_setup_succeeds_when_projector_unreachable(hass: HomeAssistant) -> None:
+    """Setup must NOT go to setup_retry when the projector/ESP is offline.
 
-    # AsyncMock would need awaitable side_effect — patching at class level lets
-    # us control the instance returned to async_setup_entry.
+    The bridge often shares power with the projector (energy-saving plug), so
+    it's unreachable whenever the projector is unplugged. Failing setup would
+    drop into setup_retry's exponential backoff and require a manual reload to
+    recover. Instead the entry stays LOADED and the coordinator's 10s poll
+    restores entities when power returns.
+    """
     from unittest.mock import AsyncMock
 
-    bad.async_connect = AsyncMock(side_effect=OSError("port unavailable"))
+    unreachable = MagicMock()
+    unreachable.async_connect = AsyncMock(side_effect=OSError("port unavailable"))
+    unreachable.async_disconnect = AsyncMock()
+    # A real DataUpdateCoordinator.async_refresh() swallows the failure and
+    # leaves last_update_success False; emulate the non-raising contract here.
+    unreachable.async_refresh = AsyncMock()
 
     entry = MockConfigEntry(domain=DOMAIN, data=VALID_ENTRY_DATA, unique_id="x")
     entry.add_to_hass(hass)
 
-    with patch(PATCH_COORD_INIT, return_value=bad):
-        await hass.config_entries.async_setup(entry.entry_id)
+    with patch(PATCH_COORD_INIT, return_value=unreachable):
+        assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
-    assert entry.state is ConfigEntryState.SETUP_RETRY
+    assert entry.state is ConfigEntryState.LOADED
+    unreachable.async_refresh.assert_awaited_once()
 
 
 async def test_migrate_entry_v1_is_noop(hass: HomeAssistant) -> None:

@@ -11,5 +11,5 @@
   "loggers": ["serialx"],
   "requirements": ["serialx[esphome]>=1.8.0"],
   "homeassistant": "2025.5.0",
-  "version": "1.0.1"
+  "version": "1.0.2"
 }

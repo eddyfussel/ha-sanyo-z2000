@@ -41,6 +41,8 @@ task snapshot-update    Regenerate Syrupy snapshots
 
 **Image/Screen mode have no status-read.** They use `RestoreEntity` for persistence; the last user pick survives restarts. Input does have CR1 readback so it eventually matches the projector.
 
+**Setup never raises `ConfigEntryNotReady`.** The RS232 bridge usually shares power with the projector (energy-saving smart plug), so it's offline whenever the projector is unplugged. If `async_setup_entry` failed in that state, the entry would land in `setup_retry` whose backoff grows exponentially to minutes — so it wouldn't recover promptly when power returns and would need a manual reload (the exact symptom users reported). Instead setup always succeeds; `async_setup_entry` calls the non-raising `coordinator.async_refresh()` and the fixed 10s poll restores entities within seconds of the device returning. Validation of a bad device still happens at config-flow time, not at runtime.
+
 **Unreachable projector = `UpdateFailed` = all entities unavailable.** No silent stale data. On failure we force-close via `abort()` (not awaited `close()`, which can hang on a dead ESPHome-proxy TCP socket and block the next poll); the next poll opens a fresh transport.
 
 **Buffer-dirty flag.** A timed-out `readuntil` doesn't stop the projector from eventually sending its response — those bytes land in serialx's buffer and would be misread as the next command's reply (the classic symptom: `Projector Mode: Unknown (----  ----  ----)` because a stale CR6 reply leaked into a CR0 read). After any timeout we set `_buffer_might_be_dirty`; the next `_send_command` drains pending bytes before writing.

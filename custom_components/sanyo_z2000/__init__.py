@@ -3,11 +3,9 @@ from __future__ import annotations
 
 import logging
 
-import serialx
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_DEVICE, Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryNotReady
 
 from .coordinator import SanyoCoordinator
 
@@ -20,26 +18,28 @@ type SanyoConfigEntry = ConfigEntry[SanyoCoordinator]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: SanyoConfigEntry) -> bool:
-    """Set up Sanyo Z2000 from a config entry."""
+    """Set up Sanyo Z2000 from a config entry.
+
+    We deliberately never raise ConfigEntryNotReady here, even when the
+    projector (or the ESP bridging RS232) is unreachable. The bridge usually
+    shares power with the projector itself — e.g. on an energy-saving smart
+    plug — so it is offline whenever the projector is unplugged. Raising
+    ConfigEntryNotReady would drop the entry into HA's setup_retry state,
+    whose backoff grows exponentially to minutes; the integration would then
+    fail to come back promptly when power returns and would need a manual
+    reload (exactly the symptom users hit). Instead we always finish setup
+    and let the DataUpdateCoordinator's fixed 10s poll mark entities
+    unavailable while offline and restore them within seconds of the
+    projector returning — no reload required.
+    """
     coordinator = SanyoCoordinator(hass, device=entry.data[CONF_DEVICE])
-
-    try:
-        await coordinator.async_connect()
-    except ConfigEntryNotReady:
-        # The ESPHome stub handler raises this directly — propagate to let HA retry.
-        raise
-    except (
-        ValueError,
-        ConnectionError,
-        OSError,
-        TimeoutError,
-        serialx.SerialException,
-    ) as err:
-        raise ConfigEntryNotReady(f"Cannot open serial port: {err}") from err
-
-    await coordinator.async_config_entry_first_refresh()
-
     entry.runtime_data = coordinator
+
+    # Non-raising first poll: populates state if the projector is reachable,
+    # otherwise leaves the coordinator marked unsuccessful (entities
+    # unavailable) without aborting setup.
+    await coordinator.async_refresh()
+
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
