@@ -38,6 +38,29 @@ wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
 
+  # --- Reachability after a power cut -------------------------------------
+  # The ESP usually shares power with the projector (energy-saving plug), so
+  # it reboots every time the projector is switched on. These settings make
+  # sure Home Assistant can reach it again quickly and reliably afterwards.
+
+  # WiFi power-save can leave an otherwise-idle ESP32 slow to answer or briefly
+  # off the network — disable it for a device that must always be reachable.
+  power_save_mode: none
+
+  # If WiFi can't be (re)joined for this long, reboot and try again from
+  # scratch. Guards against the ESP booting faster than the router/AP after a
+  # power outage and then getting stuck.
+  reboot_timeout: 5min
+
+  # STRONGLY RECOMMENDED: pin this ESP to a fixed address so HA never ends up
+  # stuck on a stale IP after a DHCP change (the classic "unreachable after
+  # power cycle / [Errno 113] No route to host" symptom). Easiest option is a
+  # DHCP reservation in your router. Alternatively set a static IP here:
+  # manual_ip:
+  #   static_ip: 192.168.105.137
+  #   gateway: 192.168.105.1
+  #   subnet: 255.255.255.0
+
   ap:
     ssid: !secret ap_ssid
     password: !secret ap_password

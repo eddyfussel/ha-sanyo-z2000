@@ -38,6 +38,28 @@ Manual: copy `custom_components/sanyo_z2000/` into your HA config and restart.
 
 When the projector is unplugged, everything goes *unavailable* until it's back.
 
+## Troubleshooting
+
+**Entities stay `unavailable` after the projector is powered back on.** The
+integration talks to the projector through the ESP (ESPHome `serial_proxy`).
+If the entities are unavailable but the integration itself is *loaded* (Settings
+→ Devices & Services), the projector is fine — the ESP is unreachable on the
+network. Check the log for `aioesphomeapi.reconnect_logic ... [Errno 113]
+Connect call failed`: that's Home Assistant unable to reach the ESP, not an
+integration fault. The integration polls every 10 s and recovers on its own
+within seconds once the ESP is back.
+
+Common causes, in order:
+
+1. **The ESP changed its DHCP IP after the power cut** and HA is stuck on the
+   old address. Give the ESP a **DHCP reservation** in your router (or a static
+   IP in the ESPHome config) so it's always reachable at the same address.
+2. **The ESP isn't actually powered** when the projector is on — confirm it
+   shares power with the projector (or give it its own always-on supply).
+3. **WiFi didn't rejoin** after the outage. The provided ESPHome config sets
+   `power_save_mode: none` and `reboot_timeout: 5min` to make this self-heal;
+   re-flash if your device predates those.
+
 ## RS232 reference
 
 Machine-readable: [`docs/commands.yaml`](docs/commands.yaml).
