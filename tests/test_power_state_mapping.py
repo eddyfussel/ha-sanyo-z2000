@@ -61,6 +61,30 @@ async def test_unreachable_projector_raises_update_failed(hass) -> None:
         await coord._async_update_data()
 
 
+async def test_esphome_api_error_on_open_is_update_failed_not_unexpected(hass) -> None:
+    """When the ESP is on the network but its ESPHome API isn't connected yet,
+    opening the proxy raises aioesphomeapi.APIConnectionError — which inherits
+    from Exception, not OSError. It must be caught and surfaced as UpdateFailed
+    (device unavailable), NOT escape as a coordinator 'Unexpected error'
+    traceback on every poll.
+    """
+    from unittest.mock import AsyncMock, patch
+
+    from aioesphomeapi import APIConnectionError
+    from homeassistant.helpers.update_coordinator import UpdateFailed
+
+    coord = SanyoCoordinator(hass, device="esphome-hass://x?port_name=uart")
+    coord._serial = None  # force the reconnect path in _async_update_data
+
+    with patch.object(
+        coord,
+        "async_connect",
+        AsyncMock(side_effect=APIConnectionError("Not connected to sanyo @ 1.2.3.4!")),
+    ):
+        with pytest.raises(UpdateFailed):
+            await coord._async_update_data()
+
+
 async def test_send_command_drains_buffer_after_previous_timeout(hass) -> None:
     """After a timed-out read, the next command must drain stale bytes first.
 
@@ -135,7 +159,6 @@ def _fake_serial_returning(responses: dict[bytes, str]):
     Unknown commands raise asyncio.TimeoutError to simulate the projector
     being unplugged / unreachable.
     """
-    import asyncio
 
     fake = MagicMock()
     fake.is_open = True
@@ -151,7 +174,7 @@ def _fake_serial_returning(responses: dict[bytes, str]):
     async def readuntil(_sep: bytes) -> bytes:
         cmd = pending.pop(0)
         if cmd not in responses:
-            raise asyncio.TimeoutError
+            raise TimeoutError
         return responses[cmd].encode("ascii") + b"\r"
 
     fake.write = write

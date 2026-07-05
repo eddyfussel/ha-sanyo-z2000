@@ -30,6 +30,23 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
+# Opening/using the serial port over an ESPHome proxy can fail with
+# aioesphomeapi's APIConnectionError (e.g. "Not connected to <name>@<ip>")
+# when the ESP is on the network but its API isn't connected yet. That type
+# inherits from Exception, not OSError, so it would otherwise escape our
+# handlers and surface as a coordinator "Unexpected error" traceback on every
+# poll. Fold it into the transient-connection error set. Guarded so the
+# integration still imports if serialx is installed without the [esphome] extra.
+try:
+    from aioesphomeapi import APIConnectionError as _APIConnectionError
+
+    _EXTRA_CONNECTION_ERRORS: tuple[type[BaseException], ...] = (_APIConnectionError,)
+except ImportError:  # pragma: no cover - [esphome] extra always present in prod
+    _EXTRA_CONNECTION_ERRORS = ()
+
+# Any of these means "device not reachable right now" → UpdateFailed + retry.
+CONNECTION_ERRORS = (OSError, serialx.SerialException, *_EXTRA_CONNECTION_ERRORS)
+
 
 @dataclass
 class ProjectorData:
@@ -91,10 +108,10 @@ class SanyoCoordinator(DataUpdateCoordinator[ProjectorData]):
             return
         try:
             await asyncio.wait_for(self._serial.close(), timeout=2.0)
-        except (TimeoutError, OSError, serialx.SerialException):
+        except (TimeoutError, *CONNECTION_ERRORS):
             try:
                 self._serial.abort()
-            except (OSError, serialx.SerialException):
+            except CONNECTION_ERRORS:
                 pass
         self._serial = None
         self._buffer_might_be_dirty = False
@@ -122,7 +139,7 @@ class SanyoCoordinator(DataUpdateCoordinator[ProjectorData]):
                     self._serial.readuntil(b"\r"),
                     timeout=RESPONSE_TIMEOUT_SECONDS,
                 )
-            except (TimeoutError, OSError, serialx.SerialException) as err:
+            except (TimeoutError, *CONNECTION_ERRORS) as err:
                 # A late response may still arrive after we time out and
                 # would be misread as the next command's reply. Flag the
                 # buffer dirty so we drain before the next write.
@@ -151,7 +168,7 @@ class SanyoCoordinator(DataUpdateCoordinator[ProjectorData]):
                 )
                 if not stale:
                     return
-        except (TimeoutError, OSError, serialx.SerialException):
+        except (TimeoutError, *CONNECTION_ERRORS):
             return
 
     # ── Polling ────────────────────────────────────────────────────────────────
@@ -166,7 +183,9 @@ class SanyoCoordinator(DataUpdateCoordinator[ProjectorData]):
         if self._serial is None or not self._serial.is_open:
             try:
                 await self.async_connect()
-            except (OSError, serialx.SerialException) as err:
+            except CONNECTION_ERRORS as err:
+                # Clear the half-opened port so the next poll retries cleanly.
+                await self._safe_close()
                 raise UpdateFailed(f"Cannot open serial port: {err}") from err
 
         data = ProjectorData()
@@ -211,7 +230,7 @@ class SanyoCoordinator(DataUpdateCoordinator[ProjectorData]):
                     data.temp2 = _parse_temp(parts[1])
                     data.temp3 = _parse_temp(parts[2])
 
-        except (OSError, serialx.SerialException) as err:
+        except CONNECTION_ERRORS as err:
             await self._safe_close()
             raise UpdateFailed(f"Serial error: {err}") from err
 
@@ -230,7 +249,7 @@ class SanyoCoordinator(DataUpdateCoordinator[ProjectorData]):
             return
         try:
             self._serial.abort()
-        except (OSError, serialx.SerialException):
+        except CONNECTION_ERRORS:
             pass
         self._serial = None
         self._buffer_might_be_dirty = False
